@@ -21,6 +21,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import timber.log.Timber
 import timber.log.Timber.DebugTree
+import kotlin.text.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -52,8 +53,6 @@ class MainActivity : AppCompatActivity() {
 
             Timber.d("Checked radio id is ${radio_group.checkedRadioButtonId}")
 
-            // set the button to loading state
-            custom_button.setState(ButtonState.Loading)
 
             when (radio_group.checkedRadioButtonId) {
                 R.id.radio_glide_repo -> {
@@ -75,8 +74,9 @@ class MainActivity : AppCompatActivity() {
                     url = null
                     repoName = null
                     Toast.makeText(this, "Select a file to download",
-                        Toast.LENGTH_SHORT).show()
+                            Toast.LENGTH_SHORT).show()
                 }
+
             }
 
         }
@@ -137,20 +137,25 @@ class MainActivity : AppCompatActivity() {
             val cursor = downloadManager.query(query)
             cursor.moveToFirst()
             val status = when (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))) {
-                DownloadManager.STATUS_SUCCESSFUL -> "Successful download"
-                else -> "Failed download"
+                DownloadManager.STATUS_SUCCESSFUL -> "successfully download"
+                else -> "failed to download"
             }
 
             Timber.d("The download status was: $status for url $url and id $id, repoName: $repoName")
 
+            val messageBody = String.format(applicationContext.getString(R.string.notification_description),
+                repoName, status)
+
             notificationManager.sendNotification(
-                context.getText(R.string.notification_description).toString(),
+                messageBody,
                 context, id, status, url!!, repoName!!)
 
         }
     }
 
     private fun download() {
+        // set the button to loading state
+        custom_button.setState(ButtonState.Loading)
 
         val request =
             DownloadManager.Request(Uri.parse(url))

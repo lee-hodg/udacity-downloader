@@ -11,7 +11,8 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
-import androidx.core.content.res.ResourcesCompat
+import androidx.core.content.withStyledAttributes
+
 import timber.log.Timber
 import kotlin.properties.Delegates
 
@@ -26,15 +27,9 @@ class LoadingButton @JvmOverloads constructor(
 
     private var buttonText: String = resources.getString(R.string.button_name)
 
-    private val backgroundColor = ResourcesCompat.getColor(
-        resources, R.color.colorPrimary,
-        null
-    )
-
-    private val barColor = ResourcesCompat.getColor(
-        resources, R.color.colorAccent,
-        null
-    )
+    private var loadingColor = 0
+    private var circleColor = 0
+    private var customBackgroundColor = 0
 
     private val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = resources.getDimension(R.dimen.default_text_size)
@@ -42,17 +37,11 @@ class LoadingButton @JvmOverloads constructor(
         color = Color.WHITE
     }
 
-    private val paintBar = Paint().apply {
+    private val paintShapes = Paint().apply {
         isAntiAlias = true
-        color = barColor
-
+        color = Color.RED
     }
 
-    private val paintCircle = Paint().apply {
-        isAntiAlias = true
-        color = Color.WHITE
-
-    }
 
     private var buttonAnimator = ValueAnimator()
     private var circleAnimator = ValueAnimator()
@@ -81,14 +70,21 @@ class LoadingButton @JvmOverloads constructor(
 
     init {
         isClickable = true
+
+        context.withStyledAttributes(attrs, R.styleable.LoadingButton) {
+            circleColor = getColor(R.styleable.LoadingButton_circleColor, 0)
+            loadingColor = getColor(R.styleable.LoadingButton_loadingColor, 0)
+            customBackgroundColor = getColor(R.styleable.LoadingButton_backgroundColor, 0)
+        }
     }
 
     private fun drawButtonBar(canvas: Canvas?) {
+        paintShapes.color = loadingColor
         canvas?.drawRect(
             0f,
             0f,
             progress,
-            heightSize.toFloat(), paintBar
+            heightSize.toFloat(), paintShapes
         )
     }
 
@@ -155,6 +151,7 @@ class LoadingButton @JvmOverloads constructor(
     }
 
     private fun drawCircle(canvas: Canvas?){
+        paintShapes.color = circleColor
 
         val circleRadius = heightSize.toFloat()/2
 
@@ -164,13 +161,13 @@ class LoadingButton @JvmOverloads constructor(
             circleRadius*2f,
             circleRadius*2f)
 
-        canvas?.drawArc(oval, 0F, angle, true, paintCircle)
+        canvas?.drawArc(oval, 0F, angle, true, paintShapes)
     }
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
 
-        canvas?.drawColor(backgroundColor)
+        canvas?.drawColor(customBackgroundColor)
 
         if (buttonState == ButtonState.Loading) {
             drawButtonBar(canvas)
@@ -197,6 +194,12 @@ class LoadingButton @JvmOverloads constructor(
 
     fun setState(state: ButtonState) {
         buttonState = state
+    }
+
+    override fun performClick(): Boolean {
+        if (super.performClick()) return true
+        invalidate()
+        return true
     }
 
     private fun ValueAnimator.disableViewDuringAnimation(view: View) {
